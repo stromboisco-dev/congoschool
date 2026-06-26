@@ -19,9 +19,7 @@ from functools import wraps
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'congoschool-v2-secure-a7f3e9b1d4c6')
 
-# Vercel = in-memory DB; local = file DB
-_IS_VERCEL = os.environ.get('VERCEL', '') == '1'
-DB_PATH = '/tmp/congoschool.db' if _IS_VERCEL else os.path.join(os.path.dirname(os.path.abspath(__file__)), 'congoschool.db')
+DB_PATH = os.environ.get('DATABASE_PATH', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'congoschool.db'))
 
 
 # ──────────────────────────────────────────────
