@@ -21,10 +21,6 @@ app.secret_key = os.environ.get('SECRET_KEY', 'congoschool-v2-secure-a7f3e9b1d4c
 
 DB_PATH = os.environ.get('DATABASE_PATH', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'congoschool.db'))
 
-# Ensure /tmp directory exists for Vercel
-if not os.path.exists(os.path.dirname(DB_PATH)):
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-
 
 # ──────────────────────────────────────────────
 # DATABASE
