@@ -21,6 +21,10 @@ app.secret_key = os.environ.get('SECRET_KEY', 'congoschool-v2-secure-a7f3e9b1d4c
 
 DB_PATH = os.environ.get('DATABASE_PATH', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'congoschool.db'))
 
+# Ensure /tmp directory exists for Vercel
+if not os.path.exists(os.path.dirname(DB_PATH)):
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+
 
 # ──────────────────────────────────────────────
 # DATABASE
@@ -492,17 +496,22 @@ def login():
         username = request.form.get('username', '').strip()
         pwd = request.form.get('password', '')
         conn = get_db()
+        # Ensure admin exists on every login attempt (for serverless)
+        try:
+            existing = conn.execute("SELECT id FROM users WHERE role='admin'").fetchone()
+            if not existing:
+                conn.execute("INSERT INTO users (username, password_hash, role, full_name) VALUES (?,?,'admin',?)",
+                             ('admin', generate_password_hash('congoschool2025!', 'pbkdf2:sha256', 260000), 'Administrateur'))
+                conn.commit()
+        except:
+            pass
         user = conn.execute("SELECT * FROM users WHERE username=? AND is_active=1", (username,)).fetchone()
         conn.close()
         if user and check_password_hash(user['password_hash'], pwd):
             session['user_id'] = user['id']
             session['user_role'] = user['role']
             session['user_name'] = user['full_name'] or user['username']
-            # Update last login
-            conn = get_db()
-            conn.execute("UPDATE users SET last_login=datetime('now') WHERE id=?", (user['id'],))
-            conn.commit()
-            conn.close()
+            session.permanent = True
             return redirect(url_for('dashboard'))
         else:
             error = "Nom d'utilisateur ou mot de passe incorrect."
