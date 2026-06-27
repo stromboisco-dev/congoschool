@@ -6,6 +6,7 @@ Flask + SQLite | Tout en un seul fichier
 
 import sqlite3
 import os
+import sys
 from datetime import datetime, date
 from flask import Flask, request, redirect, url_for, render_template_string, flash, jsonify, send_file, session
 import openpyxl
@@ -19,7 +20,18 @@ from functools import wraps
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'congoschool-v2-secure-a7f3e9b1d4c6')
 
-DB_PATH = os.environ.get('DATABASE_PATH', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'congoschool.db'))
+if getattr(sys, 'frozen', False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Vercel / serverless: use /tmp for writable SQLite
+VERCEL = os.environ.get('VERCEL', '') == '1'
+if VERCEL:
+    BASE_DIR = '/tmp'
+    os.makedirs(BASE_DIR, exist_ok=True)
+
+DB_PATH = os.environ.get('DATABASE_PATH', os.path.join(BASE_DIR, 'congoschool.db'))
 
 
 # ──────────────────────────────────────────────
@@ -267,6 +279,20 @@ def init_db():
                   ('admin', generate_password_hash('congoschool2025!', 'pbkdf2:sha256', 260000), 'Administrateur'))
         conn.commit()
 
+    # ── System settings table (access code, etc.) ──
+    c.execute('''CREATE TABLE IF NOT EXISTS system_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TEXT DEFAULT (datetime('now'))
+    )''')
+    conn.commit()
+
+    # Default access code if not set
+    existing_code = c.execute("SELECT value FROM system_settings WHERE key='access_code'").fetchone()
+    if not existing_code:
+        c.execute("INSERT INTO system_settings (key, value) VALUES ('access_code', 'congo2025')", )
+        conn.commit()
+
     conn.close()
 
 
@@ -382,6 +408,7 @@ label{font-size:13px;font-weight:600;color:#374151;margin-bottom:4px;display:blo
     <a href="/timetable" class="{{'active' if page=='timetable'}}"><span class="icon">📅</span> Emploi du temps</a>
     <a href="/fees" class="{{'active' if page=='fees'}}"><span class="icon">💰</span> Frais scolaires</a>
     {% if session.get('user_role') == 'admin' %}<a href="/admin/users" class="{{'active' if page=='admin_users'}}"><span class="icon">👤</span> Utilisateurs</a>{% endif %}
+    {% if session.get('user_role') == 'admin' %}<a href="/admin/access-code" class="{{'active' if page=='admin_access_code'}}"><span class="icon">🔐</span> Code d'accès</a>{% endif %}
     <a href="/logout" style="margin-top:20px;border-top:1px solid #16213e;padding-top:12px;color:#e94560;"><span class="icon">🚪</span> Déconnexion</a>
   </nav>
 </aside>
@@ -491,26 +518,33 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         pwd = request.form.get('password', '')
+        access_code = request.form.get('access_code', '').strip()
         conn = get_db()
-        # Ensure admin exists on every login attempt (for serverless)
-        try:
-            existing = conn.execute("SELECT id FROM users WHERE role='admin'").fetchone()
-            if not existing:
-                conn.execute("INSERT INTO users (username, password_hash, role, full_name) VALUES (?,?,'admin',?)",
-                             ('admin', generate_password_hash('congoschool2025!', 'pbkdf2:sha256', 260000), 'Administrateur'))
-                conn.commit()
-        except:
-            pass
-        user = conn.execute("SELECT * FROM users WHERE username=? AND is_active=1", (username,)).fetchone()
-        conn.close()
-        if user and check_password_hash(user['password_hash'], pwd):
-            session['user_id'] = user['id']
-            session['user_role'] = user['role']
-            session['user_name'] = user['full_name'] or user['username']
-            session.permanent = True
-            return redirect(url_for('dashboard'))
+        # Verify access code first
+        stored_code = conn.execute("SELECT value FROM system_settings WHERE key='access_code'").fetchone()
+        if not stored_code or stored_code[0] != access_code:
+            conn.close()
+            error = "Code d'accès invalide. Contactez l'administrateur."
         else:
-            error = "Nom d'utilisateur ou mot de passe incorrect."
+            # Ensure admin exists on every login attempt (for serverless)
+            try:
+                existing = conn.execute("SELECT id FROM users WHERE role='admin'").fetchone()
+                if not existing:
+                    conn.execute("INSERT INTO users (username, password_hash, role, full_name) VALUES (?,?,'admin',?)",
+                                 ('admin', generate_password_hash('congoschool2025!', 'pbkdf2:sha256', 260000), 'Administrateur'))
+                    conn.commit()
+            except:
+                pass
+            user = conn.execute("SELECT * FROM users WHERE username=? AND is_active=1", (username,)).fetchone()
+            conn.close()
+            if user and check_password_hash(user['password_hash'], pwd):
+                session['user_id'] = user['id']
+                session['user_role'] = user['role']
+                session['user_name'] = user['full_name'] or user['username']
+                session.permanent = True
+                return redirect(url_for('dashboard'))
+            else:
+                error = "Nom d'utilisateur ou mot de passe incorrect."
     err_html = f'<div class="error">{error}</div>' if error else ''
     return render_template_string(LOGIN_STYLE + '''
 <body>
@@ -519,8 +553,10 @@ def login():
   <div class="subtitle">Connectez-vous pour accéder au système</div>
   ''' + err_html + '''
   <form method="post">
+    <label>🔐 Code d'accès</label>
+    <input type="password" name="access_code" placeholder="Code fourni par l'admin" required autofocus>
     <label>Nom d'utilisateur</label>
-    <input type="text" name="username" placeholder="Entrez votre identifiant" required autofocus>
+    <input type="text" name="username" placeholder="Entrez votre identifiant" required>
     <label>Mot de passe</label>
     <input type="password" name="password" placeholder="Entrez votre mot de passe" required>
     <button type="submit">🔐 Se connecter</button>
@@ -661,8 +697,74 @@ def admin_delete_user():
 
 
 # ──────────────────────────────────────────────
-# ROUTES
+# ADMIN: CODE D'ACCÈS
 # ──────────────────────────────────────────────
+
+@app.route('/admin/access-code', methods=['GET', 'POST'])
+@admin_required
+def admin_access_code():
+    conn = get_db()
+    if request.method == 'POST':
+        new_code = request.form.get('new_code', '').strip()
+        confirm_code = request.form.get('confirm_code', '').strip()
+        if not new_code or len(new_code) < 4:
+            flash("Le code doit avoir au moins 4 caractères.", "error")
+        elif new_code != confirm_code:
+            flash("Les deux codes ne correspondent pas.", "error")
+        else:
+            conn.execute("UPDATE system_settings SET value=?, updated_at=datetime('now') WHERE key='access_code'", (new_code,))
+            conn.commit()
+            flash("Code d'accès mis à jour avec succès !", "success")
+    current_code = conn.execute("SELECT value, updated_at FROM system_settings WHERE key='access_code'").fetchone()
+    conn.close()
+    code_display = current_code[0] if current_code else "Non défini"
+    code_updated = current_code[1] if current_code else "-"
+    content = f'''
+    <div class="toolbar">
+        <h2>🔐 Gestion du code d'accès</h2>
+    </div>
+    <div style="max-width:550px">
+        <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:10px;padding:18px;margin-bottom:24px">
+            <b>⚠️ Important :</b> Ce code est obligatoire pour se connecter au système.
+            Partagez-le uniquement avec les personnes autorisées. Si quelqu'un quitte l'équipe,
+            changez-le immédiatement.
+        </div>
+        <div style="background:var(--bg-card);border-radius:12px;padding:24px;margin-bottom:24px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <label style="font-weight:700;font-size:14px">Code d'accès actuel</label>
+                <span id="codeMasked" style="font-family:monospace;font-size:18px;letter-spacing:3px;color:var(--primary)">{"*" * len(code_display)}</span>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="toggleCode()" id="toggleBtn">👁 Afficher</button>
+            </div>
+            <div style="font-size:12px;color:#999">Dernière modification : {code_updated}</div>
+            <input type="hidden" id="realCode" value="{code_display}">
+        </div>
+        <form method="post">
+            <div class="form-group">
+                <label>Nouveau code d'accès</label>
+                <input type="text" name="new_code" placeholder="Entrez le nouveau code (min. 4 car.)" required style="width:100%;padding:12px;border:2px solid #d1d5db;border-radius:10px;font-size:14px">
+            </div>
+            <div class="form-group">
+                <label>Confirmer le code</label>
+                <input type="text" name="confirm_code" placeholder="Confirmez le nouveau code" required style="width:100%;padding:12px;border:2px solid #d1d5db;border-radius:10px;font-size:14px">
+            </div>
+            <button type="submit" class="btn btn-primary" onclick="return confirm('Voulez-vous vraiment changer le code d\\'accès ? Tous les utilisateurs devront utiliser le nouveau code.')">🔑 Changer le code d'accès</button>
+        </form>
+    </div>
+    <script>
+    function toggleCode() {{
+        var masked = document.getElementById('codeMasked');
+        var real = document.getElementById('realCode').value;
+        var btn = document.getElementById('toggleBtn');
+        if (masked.textContent.includes('*')) {{
+            masked.textContent = real;
+            btn.textContent = '🔒 Masquer';
+        }} else {{
+            masked.textContent = '*'.repeat(real.length);
+            btn.textContent = '👁 Afficher';
+        }}
+    }}
+    </script>'''
+    return render("admin_access_code", "Code d'accès", content)
 
 @app.route('/set_cycle', methods=['POST'])
 def set_cycle():

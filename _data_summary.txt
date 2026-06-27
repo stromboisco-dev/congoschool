@@ -1,0 +1,89 @@
+=======================================================
+   CONGOSCHOOL - DONNEES COMPLETES
+=======================================================
+
+--- ELEVES ---
+  2025-001 | Emmanuel Kasongo | M | 6ème A | Papa Kasongo | +243820000001 | actif
+  2025-002 | Grace Mbemba | F | 6ème A | Maman Mbemba | +243820000002 | actif
+  2025-003 | Joel Tshimanga | M | 5ème B | Papa Tshimanga | +243820000003 | actif
+  2025-004 | Divine Lukaku | F | 5ème B | Maman Lukaku | +243820000004 | actif
+  2025-005 | Patrick Mokobe | M | 4ème C | Papa Mokobe | +243820000005 | actif
+
+--- ENSEIGNANTS ---
+  1 | Jean Mukendi | Mathématiques | +243810000001 | 450000.0 FC | actif
+  2 | Marie Nsimba | Français | +243810000002 | 430000.0 FC | actif
+  3 | Pierre Kabongo | Sciences | +243810000003 | 440000.0 FC | actif
+
+--- CLASSES ---
+  6ème A | Niveau: 6ème | Capacite: 45 | Eleves: 2 | Cycle: primaire
+  5ème B | Niveau: 5ème | Capacite: 40 | Eleves: 2 | Cycle: primaire
+  4ème C | Niveau: 4ème | Capacite: 40 | Eleves: 1 | Cycle: primaire
+
+--- MATIERES ---
+  MATH | Mathématiques | Coef: 4 | Prof: Jean Mukendi
+  FRA | Français | Coef: 4 | Prof: Marie Nsimba
+  SCN | Sciences Naturelles | Coef: 3 | Prof: Pierre Kabongo
+  ANG | Anglais | Coef: 2 | Prof: -
+  GEO | Géographie | Coef: 2 | Prof: -
+
+--- NOTES ---
+  Emmanuel Kasongo | Anglais | 1er Trimestre | Devoir | 14.0/20.0 (70.0%)
+  Emmanuel Kasongo | Français | 1er Trimestre | Devoir | 12.0/20.0 (60.0%)
+  Emmanuel Kasongo | Géographie | 1er Trimestre | Devoir | 13.0/20.0 (65.0%)
+  Emmanuel Kasongo | Mathématiques | 1er Trimestre | Devoir | 15.0/20.0 (75.0%)
+  Emmanuel Kasongo | Sciences Naturelles | 1er Trimestre | Devoir | 17.0/20.0 (85.0%)
+  Divine Lukaku | Anglais | 1er Trimestre | Devoir | 18.0/20.0 (90.0%)
+  Divine Lukaku | Français | 1er Trimestre | Devoir | 17.0/20.0 (85.0%)
+  Divine Lukaku | Géographie | 1er Trimestre | Devoir | 14.0/20.0 (70.0%)
+  Divine Lukaku | Mathématiques | 1er Trimestre | Devoir | 16.0/20.0 (80.0%)
+  Divine Lukaku | Sciences Naturelles | 1er Trimestre | Devoir | 15.0/20.0 (75.0%)
+  Grace Mbemba | Anglais | 1er Trimestre | Devoir | 19.0/20.0 (95.0%)
+  Grace Mbemba | Français | 1er Trimestre | Devoir | 16.0/20.0 (80.0%)
+  Grace Mbemba | Géographie | 1er Trimestre | Devoir | 15.0/20.0 (75.0%)
+  Grace Mbemba | Mathématiques | 1er Trimestre | Devoir | 18.0/20.0 (90.0%)
+  Grace Mbemba | Sciences Naturelles | 1er Trimestre | Devoir | 14.0/20.0 (70.0%)
+  Patrick Mokobe | Anglais | 1er Trimestre | Devoir | 10.0/20.0 (50.0%)
+  Patrick Mokobe | Français | 1er Trimestre | Devoir | 11.0/20.0 (55.0%)
+  Patrick Mokobe | Géographie | 1er Trimestre | Devoir | 12.0/20.0 (60.0%)
+  Patrick Mokobe | Mathématiques | 1er Trimestre | Devoir | 13.0/20.0 (65.0%)
+  Patrick Mokobe | Sciences Naturelles | 1er Trimestre | Devoir | 14.0/20.0 (70.0%)
+  Joel Tshimanga | Anglais | 1er Trimestre | Devoir | 12.0/20.0 (60.0%)
+  Joel Tshimanga | Français | 1er Trimestre | Devoir | 13.0/20.0 (65.0%)
+  Joel Tshimanga | Géographie | 1er Trimestre | Devoir | 9.0/20.0 (45.0%)
+  Joel Tshimanga | Mathématiques | 1er Trimestre | Devoir | 11.0/20.0 (55.0%)
+  Joel Tshimanga | Sciences Naturelles | 1er Trimestre | Devoir | 10.0/20.0 (50.0%)
+
+--- PRESENCES ---
+  Emmanuel Kasongo | 2026-06-26 | présent
+  Divine Lukaku | 2026-06-26 | présent
+  Grace Mbemba | 2026-06-26 | présent
+  Patrick Mokobe | 2026-06-26 | retard
+  Joel Tshimanga | 2026-06-26 | absent
+
+--- FRAIS SCOLAIRES ---
+  Emmanuel Kasongo | Inscription | Total: 150000.0 FC | Paye: 150000.0 FC | Reste: 0.0 FC | REC-001 | 2025-09-15
+  Divine Lukaku | Inscription | Total: 150000.0 FC | Paye: 0.0 FC | Reste: 150000.0 FC | None | 2025-09-15
+  Grace Mbemba | Inscription | Total: 150000.0 FC | Paye: 150000.0 FC | Reste: 0.0 FC | REC-002 | 2025-09-15
+  Patrick Mokobe | Inscription | Total: 150000.0 FC | Paye: 75000.0 FC | Reste: 75000.0 FC | REC-004 | 2025-09-15
+  Joel Tshimanga | Inscription | Total: 150000.0 FC | Paye: 80000.0 FC | Reste: 70000.0 FC | REC-003 | 2025-09-15
+
+--- EMPLOI DU TEMPS ---
+  4ème C | Mathématiques | Lundi | 07:30-09:00 | Salle C1
+  4ème C | Sciences Naturelles | Mardi | 07:30-09:00 | Labo Sciences
+  4ème C | Anglais | Mercredi | 07:30-09:00 | Salle C1
+  5ème B | Mathématiques | Lundi | 07:30-09:00 | Salle B1
+  5ème B | Français | Lundi | 09:15-10:45 | Salle B1
+  5ème B | Sciences Naturelles | Mardi | 07:30-09:00 | Labo Sciences
+  5ème B | Géographie | Mercredi | 07:30-09:00 | Salle B1
+  6ème A | Mathématiques | Lundi | 07:30-09:00 | Salle A1
+  6ème A | Français | Lundi | 09:15-10:45 | Salle A1
+  6ème A | Sciences Naturelles | Mardi | 07:30-09:00 | Labo Sciences
+  6ème A | Anglais | Mardi | 09:15-10:45 | Salle A1
+  6ème A | Géographie | Mercredi | 07:30-09:00 | Salle A1
+
+--- UTILISATEURS ---
+  1 | admin | Administrateur | Role: admin | Actif: 1
+
+--- CODE D'ACCES ---
+  Code: congo2025
+  Modifie: 2026-06-27 13:51:23
