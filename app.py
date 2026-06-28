@@ -472,18 +472,21 @@ def admin_required(f):
 
 @app.before_request
 def auth_guard():
-    # Exempt login, static, and favicon
-    if request.path in ('/login', '/favicon.ico') or request.path.startswith('/static'):
+    # Exempt login, portal, static, and favicon
+    if request.path in ('/login', '/portal', '/favicon.ico') or request.path.startswith('/static'):
         return None
     if 'user_id' not in session:
-        return redirect(url_for('login'))
+        # Redirect to portal for public paths, login for admin paths
+        if request.path.startswith('/admin'):
+            return redirect(url_for('login'))
+        return redirect(url_for('portal'))
     # Check user still exists and is active
     conn = get_db()
     user = conn.execute("SELECT id FROM users WHERE id=? AND is_active=1", (session['user_id'],)).fetchone()
     conn.close()
     if not user:
         session.clear()
-        return redirect(url_for('login'))
+        return redirect(url_for('portal'))
     # Write protection: POST/DELETE requires at least 'editor' role
     if request.method in ('POST', 'DELETE') and request.path != '/login':
         role = session.get('user_role', 'viewer')
@@ -550,7 +553,7 @@ def login():
 <body>
 <div class="login-box">
   <div class="logo"><span>⚔</span> CongoSchool</div>
-  <div class="subtitle">Connectez-vous pour accéder au système</div>
+  <div class="subtitle">🔒 Connexion Administrateur</div>
   ''' + err_html + '''
   <form method="post">
     <label>🔐 Code d'accès</label>
@@ -561,7 +564,79 @@ def login():
     <input type="password" name="password" placeholder="Entrez votre mot de passe" required>
     <button type="submit">🔐 Se connecter</button>
   </form>
+  <div style="text-align:center;margin-top:14px">
+    <a href="/portal" style="color:#0984e3;font-size:13px;text-decoration:none">👤 Connexion utilisateur</a>
+  </div>
   <div class="footer">CongoSchool &copy; 2025 — Accès sécurisé</div>
+</div>
+</body>
+''')
+
+
+# ──────────────────────────────────────────────
+# PORTAL — User login (NO access code)
+# ──────────────────────────────────────────────
+PORTAL_STYLE = '''
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);font-family:Segoe UI,sans-serif}
+.login-box{background:#fff;border-radius:16px;padding:40px;width:90%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.login-box .logo{text-align:center;margin-bottom:8px;font-size:28px;font-weight:800;color:#1a1a2e}
+.login-box .logo span{color:#e94560}
+.login-box .subtitle{text-align:center;color:#636e72;font-size:13px;margin-bottom:28px}
+.login-box label{font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;display:block}
+.login-box input{width:100%;padding:12px 14px;border:2px solid #d1d5db;border-radius:10px;font-size:14px;transition:border .2s;margin-bottom:16px}
+.login-box input:focus{outline:none;border-color:#e94560;box-shadow:0 0 0 3px rgba(233,69,96,.15)}
+.login-box button{width:100%;padding:14px;border:none;border-radius:10px;background:linear-gradient(135deg,#0984e3,#0652DD);color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:transform .2s}
+.login-box button:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(9,132,227,.3)}
+.login-box .error{text-align:center;color:#e94560;font-size:13px;margin-bottom:12px;padding:8px;background:#fee2e2;border-radius:8px}
+.login-box .footer{text-align:center;margin-top:20px;font-size:11px;color:#aaa}
+</style>
+'''
+
+@app.route('/portal', methods=['GET', 'POST'])
+def portal():
+    if 'user_id' in session:
+        return redirect(url_for('dashboard'))
+    error = None
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        pwd = request.form.get('password', '')
+        conn = get_db()
+        # Ensure admin exists (for serverless)
+        try:
+            existing = conn.execute("SELECT id FROM users WHERE role='admin'").fetchone()
+            if not existing:
+                conn.execute("INSERT INTO users (username, password_hash, role, full_name) VALUES (?,?,'admin',?)",
+                             ('admin', generate_password_hash('congoschool2025!', 'pbkdf2:sha256', 260000), 'Administrateur'))
+                conn.commit()
+        except:
+            pass
+        user = conn.execute("SELECT * FROM users WHERE username=? AND is_active=1", (username,)).fetchone()
+        conn.close()
+        if user and check_password_hash(user['password_hash'], pwd):
+            session['user_id'] = user['id']
+            session['user_role'] = user['role']
+            session['user_name'] = user['full_name'] or user['username']
+            session.permanent = True
+            return redirect(url_for('dashboard'))
+        else:
+            error = "Nom d'utilisateur ou mot de passe incorrect."
+    err_html = f'<div class="error">{error}</div>' if error else ''
+    return render_template_string(PORTAL_STYLE + '''
+<body>
+<div class="login-box">
+  <div class="logo"><span>⚔</span> CongoSchool</div>
+  <div class="subtitle">👤 Connexion Utilisateur</div>
+  ''' + err_html + '''
+  <form method="post">
+    <label>Nom d'utilisateur</label>
+    <input type="text" name="username" placeholder="Entrez votre identifiant" required autofocus>
+    <label>Mot de passe</label>
+    <input type="password" name="password" placeholder="Entrez votre mot de passe" required>
+    <button type="submit">👤 Se connecter</button>
+  </form>
+  <div class="footer">CongoSchool &copy; 2025</div>
 </div>
 </body>
 ''')
