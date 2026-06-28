@@ -181,11 +181,11 @@ def init_db():
 
     # ── Default user accounts (recreated each cold start for serverless) ──
     default_users = [
-        ('user1', 'user123', 'editor', 'Utilisateur 1'),
-        ('user2', 'user123', 'viewer', 'Utilisateur 2'),
-        ('user3', 'user123', 'viewer', 'Utilisateur 3'),
-        ('user4', 'user123', 'editor', 'Utilisateur 4'),
-        ('user5', 'user123', 'viewer', 'Utilisateur 5'),
+        ('user1', 'user001', 'editor', 'Utilisateur 1'),
+        ('user2', 'user002', 'viewer', 'Utilisateur 2'),
+        ('user3', 'user003', 'viewer', 'Utilisateur 3'),
+        ('user4', 'user004', 'editor', 'Utilisateur 4'),
+        ('user5', 'user005', 'viewer', 'Utilisateur 5'),
     ]
     for uname, upwd, urole, ufull in default_users:
         exists = c.execute("SELECT id FROM users WHERE username=?", (uname,)).fetchone()
