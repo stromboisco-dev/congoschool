@@ -279,6 +279,21 @@ def init_db():
                   ('admin', generate_password_hash('congoschool2025!', 'pbkdf2:sha256', 260000), 'Administrateur'))
         conn.commit()
 
+    # ── Default user accounts (recreated each cold start for serverless) ──
+    default_users = [
+        ('user1', 'user123', 'editor', 'Utilisateur 1'),
+        ('user2', 'user123', 'viewer', 'Utilisateur 2'),
+        ('user3', 'user123', 'viewer', 'Utilisateur 3'),
+        ('user4', 'user123', 'editor', 'Utilisateur 4'),
+        ('user5', 'user123', 'viewer', 'Utilisateur 5'),
+    ]
+    for uname, upwd, urole, ufull in default_users:
+        exists = c.execute("SELECT id FROM users WHERE username=?", (uname,)).fetchone()
+        if not exists:
+            c.execute("INSERT INTO users (username, password_hash, role, full_name) VALUES (?,?,?,?)",
+                      (uname, generate_password_hash(upwd, 'pbkdf2:sha256', 260000), urole, ufull))
+            conn.commit()
+
     # ── System settings table (access code, etc.) ──
     c.execute('''CREATE TABLE IF NOT EXISTS system_settings (
         key TEXT PRIMARY KEY,
